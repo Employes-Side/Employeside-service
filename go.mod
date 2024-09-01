@@ -10,7 +10,11 @@ require (
 	github.com/go-delve/delve v1.23.0
 )
 
-require filippo.io/edwards25519 v1.1.0 // indirect
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/go-jet/jet/v2 v2.10.1 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+)
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
