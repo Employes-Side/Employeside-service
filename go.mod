@@ -10,6 +10,8 @@ require (
 	github.com/go-delve/delve v1.23.0
 )
 
+require filippo.io/edwards25519 v1.1.0 // indirect
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/cilium/ebpf v0.11.0 // indirect
@@ -19,9 +21,11 @@ require (
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect

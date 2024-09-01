@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/Employes-Side/employee-side/internal/config"
 )
 
