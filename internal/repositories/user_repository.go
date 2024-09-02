@@ -11,7 +11,6 @@ import (
 	"github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/google/uuid"
-	// "github.com/go-sql-driver/mysql"
 )
 
 func NewManager(db *sql.DB) *UserRepository {

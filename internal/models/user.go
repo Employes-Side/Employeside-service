@@ -29,6 +29,7 @@ type CreateUserParameters struct {
 
 type UserManager interface {
 	Read(ctx context.Context, req ReadUserRequest) (*User, error)
-	Create(ctx context.Context, tenantID string, params CreateUserParameters) (*User, error)
+	Create(ctx context.Context, params CreateUserParameters) (*User, error)
 	Delete(ctx context.Context, req ReadUserRequest) (*User, error)
+	Update(ctx context.Context, req ReadUserRequest, params UpdateUserParameters) (*User, error)
 }
