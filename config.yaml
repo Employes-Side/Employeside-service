@@ -1,0 +1,10 @@
+db:
+  database: users
+  username: root
+  password: yourpasswd
+  hostname: localhost
+  port: 3306
+
+bind:
+  http: 0.0.0.0:8080
+  
