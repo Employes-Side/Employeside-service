@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
+	"time"
 
 	"github.com/Employes-Side/employee-side/internal/models"
 	"github.com/Employes-Side/employee-side/internal/users/model"
@@ -21,9 +23,63 @@ type UserRepository struct {
 	db *sql.DB
 }
 
-// func NewUserRepository(db *sql.DB) *UserRepository {
-// 	return &UserRepository{db: db}
-// }
+func (mgr *UserRepository) List(ctx context.Context, params models.ListUserParameters) (*models.Page, error) {
+	var orderExpr mysql.OrderByClause
+	if params.Order == "desc" {
+		orderExpr = table.Users.UserName.DESC()
+	} else {
+		orderExpr = table.Users.UserName.ASC()
+	}
+
+	statement := table.Users.
+		SELECT(table.Users.AllColumns).
+		ORDER_BY(orderExpr).
+		LIMIT(int64(params.Limit)).
+		OFFSET(int64(params.Offset))
+
+	sqlQuery, args := statement.Sql()
+	log.Printf("Executing SQL query: %s, with args: %v", sqlQuery, args)
+
+	var users []model.Users
+
+	if err := statement.QueryContext(ctx, mgr.db, &users); err != nil {
+		if err == qrm.ErrNoRows {
+			return &models.Page{}, nil
+		}
+		return &models.Page{}, err
+	}
+
+	userModels := make([]models.User, len(users))
+	for i, u := range users {
+		userModel, err := convertoDBModel(u)
+		if err != nil {
+			return &models.Page{}, err
+		}
+		userModels[i] = *userModel
+	}
+
+	countStatement := table.Users.SELECT(mysql.COUNT(table.Users.ID))
+
+	countSqlQuery, countArgs := countStatement.Sql()
+	log.Printf("Executing COUNT SQL query: %s, with args: %v", countSqlQuery, countArgs)
+
+	var totalRecordsSlice []int
+
+	if err := countStatement.QueryContext(ctx, mgr.db, &totalRecordsSlice); err != nil {
+		return &models.Page{}, err
+	}
+	totalRecords := 0
+	if len(totalRecordsSlice) > 0 {
+		totalRecords = totalRecordsSlice[0]
+	}
+
+	return &models.Page{
+		TotalRecords: totalRecords,
+		Users:        userModels,
+		Limit:        params.Limit,
+		Offset:       params.Offset,
+	}, nil
+}
 
 func (mgr *UserRepository) Read(ctx context.Context, req models.ReadUserRequest) (*models.User, error) {
 	conditions, err := mgr.buildReadClause(req)
@@ -32,6 +88,7 @@ func (mgr *UserRepository) Read(ctx context.Context, req models.ReadUserRequest)
 	}
 
 	statement := table.Users.SELECT(table.Users.AllColumns).WHERE(conditions)
+
 	var user model.Users
 	if err := statement.QueryContext(ctx, mgr.db, &user); err != nil {
 		if err == qrm.ErrNoRows {
@@ -46,23 +103,21 @@ func (mgr *UserRepository) Read(ctx context.Context, req models.ReadUserRequest)
 }
 func (mgr *UserRepository) Create(ctx context.Context, params models.CreateUserParameters) (*models.User, error) {
 	id := uuid.New()
-	idBytes, err := id.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
 
-	//	now := time.Now()
+	now := time.Now()
 
 	realm := model.Users{
-		ID:       idBytes,
-		UserName: params.UserName,
-		Email:    params.Email,
-		Password: params.Password,
+		ID:        id.String(),
+		UserName:  params.UserName,
+		Email:     params.Email,
+		Password:  params.Password,
+		CreatedAt: &now,
+		UpdatedAt: &now,
 	}
 
 	statement := table.Users.INSERT(table.Users.AllColumns).MODEL(realm)
 
-	_, err = statement.ExecContext(ctx, mgr.db)
+	_, err := statement.ExecContext(ctx, mgr.db)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +131,7 @@ func (mgr *UserRepository) Delete(ctx context.Context, req models.ReadUserReques
 		return nil, err
 	}
 
-	conditions := table.Users.ID.EQ(mysql.String(string(user.ID)))
+	conditions := table.Users.ID.EQ(mysql.String(user.ID))
 	statement := table.Users.DELETE().WHERE(conditions)
 	if _, err := statement.ExecContext(ctx, mgr.db); err != nil {
 		return nil, err
@@ -86,22 +141,28 @@ func (mgr *UserRepository) Delete(ctx context.Context, req models.ReadUserReques
 }
 
 func (mgr *UserRepository) Update(ctx context.Context, req models.ReadUserRequest, params models.UpdateUserParameters) (*models.User, error) {
-	realm, err := mgr.Read(ctx, req)
+	user, err := mgr.Read(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
+	now := time.Now()
+
 	updateModel := model.Users{
-		UserName: params.UserName,
-		Email:    params.Email,
-		Password: params.Password,
+		UserName:  params.UserName,
+		Email:     params.Email,
+		Password:  params.Password,
+		CreatedAt: &now,
+		UpdatedAt: &now,
 	}
 
 	updateStatement := table.Users.UPDATE(
 		table.Users.UserName,
 		table.Users.Email,
 		table.Users.Password,
-	).MODEL(updateModel).WHERE(table.Users.ID.EQ(mysql.String(string(realm.ID))))
+		table.Users.CreatedAt,
+		table.Users.UpdatedAt,
+	).MODEL(updateModel).WHERE(table.Users.ID.EQ(mysql.String(user.ID)))
 
 	if _, err := updateStatement.ExecContext(ctx, mgr.db); err != nil {
 		return nil, err
@@ -123,14 +184,13 @@ func (mgr *UserRepository) buildReadClause(req models.ReadUserRequest) (mysql.Bo
 }
 
 func convertoDBModel(user model.Users) (*models.User, error) {
-	id, err := uuid.FromBytes(user.ID)
-	if err != nil {
-		return nil, err
-	}
+
 	return &models.User{
-		ID:       []byte(id.String()),
-		UserName: user.UserName,
-		Email:    user.Email,
-		Password: user.Password,
+		ID:        user.ID,
+		UserName:  user.UserName,
+		Email:     user.Email,
+		Password:  user.Password,
+		CreatedAt: user.CreatedAt.UnixMilli(),
+		UpdatedAt: user.UpdatedAt.UnixMilli(),
 	}, nil
 }

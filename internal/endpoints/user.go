@@ -51,3 +51,11 @@ func (ep *UserEndpoints) Delete(ctx context.Context, req interface{}) (interface
 	}
 	return ep.manager.Delete(ctx, deleteReq)
 }
+
+func (ep *UserEndpoints) List(ctx context.Context, req interface{}) (interface{}, error) {
+	listReq, ok := req.(models.ListUserParameters)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	return ep.manager.List(ctx, listReq)
+}

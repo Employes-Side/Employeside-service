@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	kithttp "github.com/go-kit/kit/transport/http"
 
@@ -36,6 +37,13 @@ func NewHandler(users *endpoints.UserEndpoints) http.Handler {
 			kithttp.NewServer(
 				users.Read,
 				decodeReadUserRequest,
+				kithttp.EncodeJSONResponse,
+			),
+		)
+		usersPath.Methods(http.MethodGet).Path("").Handler(
+			kithttp.NewServer(
+				users.List,
+				decodeListUserRequest,
 				kithttp.EncodeJSONResponse,
 			),
 		)
@@ -80,8 +88,34 @@ func decodeReadUserRequest(_ context.Context, r *http.Request) (interface{}, err
 	}, nil
 }
 
+func decodeListUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	query := r.URL.Query()
+
+	limit, err := strconv.Atoi(query.Get("limit"))
+	if err != nil {
+		limit = 10 // default limit
+	}
+
+	offset, err := strconv.Atoi(query.Get("offset"))
+	if err != nil {
+		offset = 0 // default offset
+	}
+
+	// Get the order
+	order := query.Get("order")
+	if order != "asc" && order != "desc" {
+		order = "asc" // default order
+	}
+
+	return models.ListUserParameters{
+		Limit:  limit,
+		Offset: offset,
+		Order:  order,
+	}, nil
+}
+
 func decodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	id := mux.Vars(r)["userID"]
+	id := mux.Vars(r)["id"]
 	if id == "" {
 		return nil, errInvalidRequest
 	}
