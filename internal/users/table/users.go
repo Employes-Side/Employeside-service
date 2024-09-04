@@ -17,10 +17,12 @@ type usersTable struct {
 	mysql.Table
 
 	// Columns
-	ID       mysql.ColumnString
-	UserName mysql.ColumnString
-	Email    mysql.ColumnString
-	Password mysql.ColumnString
+	ID        mysql.ColumnString
+	UserName  mysql.ColumnString
+	Email     mysql.ColumnString
+	Password  mysql.ColumnString
+	CreatedAt mysql.ColumnTimestamp
+	UpdatedAt mysql.ColumnTimestamp
 
 	AllColumns     mysql.ColumnList
 	MutableColumns mysql.ColumnList
@@ -61,22 +63,26 @@ func newUsersTable(schemaName, tableName, alias string) *UsersTable {
 
 func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 	var (
-		IDColumn       = mysql.StringColumn("id")
-		UserNameColumn = mysql.StringColumn("user_name")
-		EmailColumn    = mysql.StringColumn("email")
-		PasswordColumn = mysql.StringColumn("password")
-		allColumns     = mysql.ColumnList{IDColumn, UserNameColumn, EmailColumn, PasswordColumn}
-		mutableColumns = mysql.ColumnList{UserNameColumn, EmailColumn, PasswordColumn}
+		IDColumn        = mysql.StringColumn("id")
+		UserNameColumn  = mysql.StringColumn("user_name")
+		EmailColumn     = mysql.StringColumn("email")
+		PasswordColumn  = mysql.StringColumn("password")
+		CreatedAtColumn = mysql.TimestampColumn("created_at")
+		UpdatedAtColumn = mysql.TimestampColumn("updated_at")
+		allColumns      = mysql.ColumnList{IDColumn, UserNameColumn, EmailColumn, PasswordColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns  = mysql.ColumnList{UserNameColumn, EmailColumn, PasswordColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return usersTable{
 		Table: mysql.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:       IDColumn,
-		UserName: UserNameColumn,
-		Email:    EmailColumn,
-		Password: PasswordColumn,
+		ID:        IDColumn,
+		UserName:  UserNameColumn,
+		Email:     EmailColumn,
+		Password:  PasswordColumn,
+		CreatedAt: CreatedAtColumn,
+		UpdatedAt: UpdatedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

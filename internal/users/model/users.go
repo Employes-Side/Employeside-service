@@ -7,9 +7,15 @@
 
 package model
 
+import (
+	"time"
+)
+
 type Users struct {
-	ID       []byte `sql:"primary_key"`
-	UserName string
-	Email    string
-	Password string
+	ID        string `sql:"primary_key"`
+	UserName  string
+	Email     string
+	Password  string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
