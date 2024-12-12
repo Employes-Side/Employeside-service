@@ -7,9 +7,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/Employes-Side/employee-side/internal/models"
-	"github.com/Employes-Side/employee-side/internal/users/model"
-	"github.com/Employes-Side/employee-side/internal/users/table"
+	models "github.com/Employes-Side/employee-side"
+	"github.com/Employes-Side/employee-side/generated/users/model"
+	"github.com/Employes-Side/employee-side/generated/users/table"
+
 	"github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/google/uuid"

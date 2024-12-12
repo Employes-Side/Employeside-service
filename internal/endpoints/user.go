@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Employes-Side/employee-side/internal/models"
+	models "github.com/Employes-Side/employee-side"
 	"github.com/Employes-Side/employee-side/internal/repositories"
 )
 

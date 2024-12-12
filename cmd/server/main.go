@@ -35,14 +35,34 @@ func main() {
 		userManager = *repositories.NewManager(dbConn)
 	}
 
+	var blogManager repositories.BlogRepository
+	{
+		blogManager = *repositories.NewBlogManager(dbConn)
+	}
+
+	var modulesManager repositories.ModulesRepository
+	{
+		modulesManager = *repositories.NewModulesManger(dbConn)
+	}
+
 	UserEndpoint := endpoints.NewUserEndpoint(userManager)
+	BlogEndpoint := endpoints.NewBlogEndpoint(blogManager)
+	ModulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
 
 	router := mux.NewRouter()
 	{
 		appHandler := handlers.NewHandler(UserEndpoint)
-
 		router.PathPrefix("/").Handler(appHandler)
+	}
 
+	{
+		appHandler := handlers.NewBlogHandler(BlogEndpoint)
+		router.PathPrefix("/").Handler(appHandler)
+	}
+
+	{
+		appHandler := handlers.NewModuleHandler(ModulesEndpoint)
+		router.PathPrefix("/").Handler(appHandler)
 	}
 
 	httpServer := &http.Server{Handler: router}

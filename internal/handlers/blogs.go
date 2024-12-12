@@ -3,63 +3,57 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
-	kithttp "github.com/go-kit/kit/transport/http"
-
 	models "github.com/Employes-Side/employee-side"
 	"github.com/Employes-Side/employee-side/internal/endpoints"
+	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 )
 
-var (
-	errInvalidRequest = errors.New("invalid request")
-	errBadRequest     = errors.New("bad request")
-)
-
-func NewHandler(users *endpoints.UserEndpoints) http.Handler {
+func NewBlogHandler(blogs *endpoints.BlogEndpoints) http.Handler {
 	router := mux.NewRouter()
 
-	usersPath := router.PathPrefix("/users").Subrouter()
+	blogPath := router.PathPrefix("/blogs").Subrouter()
 
 	{
-		usersPath.Methods(http.MethodPost).Path("").Handler(
+
+		blogPath.Methods(http.MethodPost).Path("").Handler(
 			kithttp.NewServer(
-				users.Create,
-				decodeCreateUserRequest,
+				blogs.Create,
+				decodeCreateBlogRequest,
 				kithttp.EncodeJSONResponse,
 			),
 		)
 
-		usersPath.Methods(http.MethodGet).Path("/{id}").Handler(
+		blogPath.Methods(http.MethodGet).Path("").Handler(
 			kithttp.NewServer(
-				users.Read,
-				decodeReadUserRequest,
-				kithttp.EncodeJSONResponse,
-			),
-		)
-		usersPath.Methods(http.MethodGet).Path("").Handler(
-			kithttp.NewServer(
-				users.List,
-				decodeListUserRequest,
+				blogs.List,
+				decodeListBlogRequest,
 				kithttp.EncodeJSONResponse,
 			),
 		)
 
-		usersPath.Methods(http.MethodPut).Path("/{id}").Handler(
+		blogPath.Methods(http.MethodGet).Path("/{id}").Handler(
 			kithttp.NewServer(
-				users.Update,
-				decodeUpdateUserRequest,
+				blogs.Read,
+				decodeReadBlogRequest,
+				kithttp.EncodeJSONResponse,
+			),
+		)
+		blogPath.Methods(http.MethodPut).Path("/{id}").Handler(
+			kithttp.NewServer(
+				blogs.Update,
+				decodeUpdateBlogRequest,
 				kithttp.EncodeJSONResponse,
 			),
 		)
 
-		usersPath.Methods(http.MethodDelete).Path("/{id}").Handler(
+		blogPath.Methods(http.MethodDelete).Path("/{id}").Handler(
 			kithttp.NewServer(
-				users.Delete,
-				decodeReadUserRequest,
+				blogs.Delete,
+				decodeReadBlogRequest,
 				kithttp.EncodeJSONResponse,
 			),
 		)
@@ -68,27 +62,27 @@ func NewHandler(users *endpoints.UserEndpoints) http.Handler {
 	return router
 }
 
-func decodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var params models.CreateUserParameters
+func decodeCreateBlogRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var params models.CreatBlogParameters
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return nil, errBadRequest
 	}
 	return params, nil
 }
 
-func decodeReadUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeReadBlogRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	id := mux.Vars(r)["id"]
 	if id == "" {
 		return nil, errInvalidRequest
 	}
 
-	return models.ReadUserRequest{
+	return models.ReadBlogRequest{
 		By:    "id",
 		Value: id,
 	}, nil
 }
 
-func decodeListUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeListBlogRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	query := r.URL.Query()
 
 	limit, err := strconv.Atoi(query.Get("limit"))
@@ -106,23 +100,23 @@ func decodeListUserRequest(_ context.Context, r *http.Request) (interface{}, err
 		order = "asc"
 	}
 
-	return models.ListUserParameters{
+	return models.ListBlogsParameters{
 		Limit:  limit,
 		Offset: offset,
 		Order:  order,
 	}, nil
 }
 
-func decodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateBlogRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	id := mux.Vars(r)["id"]
 	if id == "" {
 		return nil, errInvalidRequest
 	}
 
-	var params models.UpdateUserParameters
+	var params models.UpdateBlogParameters
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return nil, errBadRequest
 	}
-	params.UserName = id
+	params.BlogTitle = id
 	return params, nil
 }
