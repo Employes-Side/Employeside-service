@@ -11,16 +11,19 @@ import (
 	"github.com/go-jet/jet/v2/mysql"
 )
 
-var Blogs = newBlogsTable("users", "blogs", "")
+var Blogs = newBlogsTable("employeside", "blogs", "")
 
 type blogsTable struct {
 	mysql.Table
 
 	// Columns
 	ID          mysql.ColumnString
+	BlogName    mysql.ColumnString
 	BlogTitle   mysql.ColumnString
 	BlogContent mysql.ColumnString
-	Status      mysql.ColumnString
+	ModuleID    mysql.ColumnString
+	WriterID    mysql.ColumnString
+	WriterName  mysql.ColumnString
 	CreatedAt   mysql.ColumnTimestamp
 	UpdatedAt   mysql.ColumnTimestamp
 
@@ -64,13 +67,16 @@ func newBlogsTable(schemaName, tableName, alias string) *BlogsTable {
 func newBlogsTableImpl(schemaName, tableName, alias string) blogsTable {
 	var (
 		IDColumn          = mysql.StringColumn("id")
+		BlogNameColumn    = mysql.StringColumn("blog_name")
 		BlogTitleColumn   = mysql.StringColumn("blog_title")
 		BlogContentColumn = mysql.StringColumn("blog_content")
-		StatusColumn      = mysql.StringColumn("status")
+		ModuleIDColumn    = mysql.StringColumn("module_id")
+		WriterIDColumn    = mysql.StringColumn("writer_id")
+		WriterNameColumn  = mysql.StringColumn("writer_name")
 		CreatedAtColumn   = mysql.TimestampColumn("created_at")
 		UpdatedAtColumn   = mysql.TimestampColumn("updated_at")
-		allColumns        = mysql.ColumnList{IDColumn, BlogTitleColumn, BlogContentColumn, StatusColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns    = mysql.ColumnList{IDColumn, BlogTitleColumn, BlogContentColumn, StatusColumn, CreatedAtColumn, UpdatedAtColumn}
+		allColumns        = mysql.ColumnList{IDColumn, BlogNameColumn, BlogTitleColumn, BlogContentColumn, ModuleIDColumn, WriterIDColumn, WriterNameColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns    = mysql.ColumnList{BlogNameColumn, BlogTitleColumn, BlogContentColumn, ModuleIDColumn, WriterIDColumn, WriterNameColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return blogsTable{
@@ -78,9 +84,12 @@ func newBlogsTableImpl(schemaName, tableName, alias string) blogsTable {
 
 		//Columns
 		ID:          IDColumn,
+		BlogName:    BlogNameColumn,
 		BlogTitle:   BlogTitleColumn,
 		BlogContent: BlogContentColumn,
-		Status:      StatusColumn,
+		ModuleID:    ModuleIDColumn,
+		WriterID:    WriterIDColumn,
+		WriterName:  WriterNameColumn,
 		CreatedAt:   CreatedAtColumn,
 		UpdatedAt:   UpdatedAtColumn,
 

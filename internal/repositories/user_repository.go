@@ -8,8 +8,8 @@ import (
 	"time"
 
 	models "github.com/Employes-Side/employee-side"
-	"github.com/Employes-Side/employee-side/generated/users/model"
-	"github.com/Employes-Side/employee-side/generated/users/table"
+	"github.com/Employes-Side/employee-side/generated/employeside/model"
+	"github.com/Employes-Side/employee-side/generated/employeside/table"
 
 	"github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/qrm"
@@ -111,6 +111,8 @@ func (mgr *UserRepository) Create(ctx context.Context, params models.CreateUserP
 		ID:        id.String(),
 		UserName:  params.UserName,
 		Email:     params.Email,
+		FirstName: params.FirstName,
+		LastName:  params.LastName,
 		Password:  params.Password,
 		CreatedAt: &now,
 		UpdatedAt: &now,
@@ -153,6 +155,8 @@ func (mgr *UserRepository) Update(ctx context.Context, req models.ReadUserReques
 		UserName:  params.UserName,
 		Email:     params.Email,
 		Password:  params.Password,
+		FirstName: params.FirstName,
+		LastName:  params.LastName,
 		CreatedAt: &now,
 		UpdatedAt: &now,
 	}
@@ -161,6 +165,8 @@ func (mgr *UserRepository) Update(ctx context.Context, req models.ReadUserReques
 		table.Users.UserName,
 		table.Users.Email,
 		table.Users.Password,
+		table.Users.FirstName,
+		table.Users.LastName,
 		table.Users.CreatedAt,
 		table.Users.UpdatedAt,
 	).MODEL(updateModel).WHERE(table.Users.ID.EQ(mysql.String(user.ID)))
@@ -190,6 +196,8 @@ func convertoDBModel(user model.Users) (*models.User, error) {
 		ID:        user.ID,
 		UserName:  user.UserName,
 		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
 		Password:  user.Password,
 		CreatedAt: user.CreatedAt.UnixMilli(),
 		UpdatedAt: user.UpdatedAt.UnixMilli(),

@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	modules "github.com/Employes-Side/employee-side"
-	"github.com/Employes-Side/employee-side/generated/users/model"
-	"github.com/Employes-Side/employee-side/generated/users/table"
+	"github.com/Employes-Side/employee-side/generated/employeside/model"
+	"github.com/Employes-Side/employee-side/generated/employeside/table"
+	"github.com/google/uuid"
 
 	"github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/qrm"
-	"github.com/google/uuid"
 )
 
 func NewModulesManger(db *sql.DB) *ModulesRepository {
@@ -45,18 +46,19 @@ func (mgr *ModulesRepository) Read(ctx context.Context, req modules.ReadModulesR
 func (mgr *ModulesRepository) Create(ctx context.Context, params modules.CreateModulesParameters) (*modules.Modules, error) {
 	id := uuid.New()
 
-	//	now := time.Now()
+	now := time.Now()
 
 	module := model.Modules{
 		ID:              id.String(),
 		ModuleName:      params.ModuleName,
-		ModuleType:      &params.ModuleType,
+		ModuleType:      params.ModuleType,
 		ModuleDesc:      &params.Module_Desc,
 		ModuleShortName: &params.ModuleShortName,
 		ModulePrice:     &params.ModulePrice,
 		Purchased:       &params.Purchased,
-		///CreatedAt:       now.Unix(),
-		//	UpdatedAt:       now.Unix(),
+		UserID:          params.UserID,
+		CreatedAt:       &now,
+		UpdatedAt:       &now,
 	}
 
 	statement := table.Modules.INSERT(table.Modules.AllColumns).MODEL(module)
@@ -83,12 +85,13 @@ func convertToModulesDBMode(module model.Modules) (*modules.Modules, error) {
 	return &modules.Modules{
 		ID:              module.ID,
 		ModuleName:      module.ModuleName,
-		ModuleType:      *module.ModuleType,
+		ModuleType:      module.ModuleType,
 		Module_Desc:     *module.ModuleDesc,
 		ModuleShortName: *module.ModuleShortName,
 		ModulePrice:     *module.ModulePrice,
 		Purchased:       *module.Purchased,
-		// CreatedAt:       *module.CreatedAt,
-		// UpdatedAt:       *module.UpdatedAt,
+		UserID:          module.UserID,
+		CreatedAt:       module.CreatedAt,
+		UpdatedAt:       module.UpdatedAt,
 	}, nil
 }

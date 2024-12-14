@@ -1,17 +1,21 @@
 package employeside
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Modules struct {
-	ID              string `json:"id"`
-	ModuleName      string `json:"module_name"`
-	ModuleType      string `json:"module_type"`
-	Module_Desc     string `json:"module_desc"`
-	ModuleShortName string `json:"module_short_name"`
-	ModulePrice     string `json:"module_price"`
-	Purchased       string `json:"purchased"`
-	CreatedAt       int64  `json:"created_at"`
-	UpdatedAt       int64  `json:"updated_at"`
+	ID              string     `json:"id"`
+	ModuleName      string     `json:"module_name"`
+	UserID          string     `json:"user_id"`
+	ModuleType      string     `json:"module_type"`
+	Module_Desc     string     `json:"module_desc"`
+	ModuleShortName string     `json:"module_short_name"`
+	ModulePrice     string     `json:"module_price"`
+	Purchased       bool       `json:"purchased"`
+	CreatedAt       *time.Time `json:"created_at"`
+	UpdatedAt       *time.Time `json:"updated_at"`
 }
 
 type ReadModulesRequest struct {
@@ -32,7 +36,8 @@ type CreateModulesParameters struct {
 	Module_Desc     string `json:"module_desc"`
 	ModuleShortName string `json:"module_short_name"`
 	ModulePrice     string `json:"module_price"`
-	Purchased       string `json:"purchased"`
+	Purchased       bool   `json:"purchased"`
+	UserID          string `json:"user_id"`
 }
 
 type ModulesManager interface {

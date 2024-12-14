@@ -65,6 +65,25 @@ func main() {
 		router.PathPrefix("/").Handler(appHandler)
 	}
 
+	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		path, err := route.GetPathTemplate()
+		if err != nil {
+			return nil
+		}
+
+		methods, err := route.GetMethods()
+		if err != nil {
+			return nil
+		}
+
+		klog.Infof("\t%v %s\n", methods, path)
+
+		return nil
+	})
+	if err != nil {
+		klog.Errorf("cannot print routes: %v", err)
+	}
+
 	httpServer := &http.Server{Handler: router}
 	{
 		lis, err := net.Listen("tcp", cfg.Bind.HTTP)

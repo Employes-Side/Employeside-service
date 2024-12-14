@@ -7,6 +7,8 @@ import (
 type User struct {
 	ID        string `json:"id"`
 	UserName  string `json:"user_name"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 	CreatedAt int64  `json:"created_at"`
@@ -32,15 +34,19 @@ type Page struct {
 }
 
 type UpdateUserParameters struct {
-	UserName string `json:"user_name" validate:"required,max=150"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	UserName  string `json:"user_name" validate:"required,max=150"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 type CreateUserParameters struct {
-	UserName string `json:"user_name" validate:"required,max=150"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	UserName  string `json:"user_name" validate:"required,max=150"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 type UserManager interface {

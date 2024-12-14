@@ -8,8 +8,8 @@ import (
 	"time"
 
 	models "github.com/Employes-Side/employee-side"
-	"github.com/Employes-Side/employee-side/generated/users/model"
-	"github.com/Employes-Side/employee-side/generated/users/table"
+	"github.com/Employes-Side/employee-side/generated/employeside/model"
+	"github.com/Employes-Side/employee-side/generated/employeside/table"
 	"github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/google/uuid"
@@ -100,12 +100,16 @@ func (mgr *BlogRepository) Create(ctx context.Context, params models.CreatBlogPa
 	now := time.Now()
 
 	realm := model.Blogs{
-		ID:          stringPtr(id.String()),
-		BlogTitle:   &params.BlogTitle,
-		BlogContent: &params.BlogContent,
-		Status:      &params.Status,
-		CreatedAt:   &now,
-		UpdatedAt:   &now,
+		ID:          id.String(),
+		BlogTitle:   params.BlogTitle,
+		BlogContent: params.BlogContent,
+		ModuleID:    params.ModuleID,
+		WriterID:    params.WriterID,
+		WriterName:  params.WriterName,
+		BlogName:    params.BlogName,
+		//Status:       &params.Status, //TO DO ::
+		CreatedAt: &now,
+		UpdatedAt: &now,
 	}
 
 	statement := table.Blogs.INSERT(table.Blogs.AllColumns).MODEL(realm)
@@ -142,16 +146,24 @@ func (mgr *BlogRepository) Update(ctx context.Context, req models.ReadBlogReques
 	now := time.Now()
 
 	updateModel := model.Blogs{
-		BlogTitle:   &params.BlogTitle,
-		BlogContent: &params.BlogContent,
-		Status:      &params.Status,
-		UpdatedAt:   &now,
+		BlogTitle:   params.BlogTitle,
+		BlogContent: params.BlogContent,
+		ModuleID:    params.ModuleID,
+		WriterID:    params.WriterID,
+		WriterName:  params.WriterName,
+		BlogName:    params.BlogName,
+		//Status:      &params.Status,
+		UpdatedAt: &now,
 	}
 
 	updateStatement := table.Blogs.UPDATE(
 		table.Blogs.BlogContent,
 		table.Blogs.BlogTitle,
-		table.Blogs.Status,
+		table.Blogs.MutableColumns,
+		table.Blogs.WriterID,
+		table.Blogs.BlogName,
+		table.Blogs.WriterName,
+		//table.Blogs.Status,
 		table.Users.UpdatedAt,
 	).MODEL(updateModel).WHERE(table.Blogs.ID.EQ(mysql.String(blog.ID)))
 
@@ -174,15 +186,19 @@ func (mgr *BlogRepository) buildReadClause(req models.ReadBlogRequest) (mysql.Bo
 }
 func convertToBlogsDBModel(blog model.Blogs) (*models.Blogs, error) {
 	return &models.Blogs{
-		ID:          *blog.ID,
-		BlogTitle:   *blog.BlogTitle,
-		BlogContent: *blog.BlogContent,
-		Status:      *blog.Status,
-		CreatedAt:   blog.CreatedAt.UnixMilli(),
-		UpdatedAt:   blog.UpdatedAt.UnixMilli(),
+		ID:          blog.ID,
+		BlogTitle:   blog.BlogTitle,
+		BlogContent: blog.BlogContent,
+		ModuleID:    blog.ModuleID,
+		WriterID:    blog.WriterID,
+		WriterName:  blog.WriterName,
+		BlogName:    blog.BlogName,
+		//Status:      *blog.Status,
+		CreatedAt: blog.CreatedAt.UnixMilli(),
+		UpdatedAt: blog.UpdatedAt.UnixMilli(),
 	}, nil
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
+// func stringPtr(s string) *string {
+// 	return &s
+// }

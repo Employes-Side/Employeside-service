@@ -11,19 +11,22 @@ import (
 	"github.com/go-jet/jet/v2/mysql"
 )
 
-var Modules = newModulesTable("users", "modules", "")
+var Modules = newModulesTable("employeside", "modules", "")
 
 type modulesTable struct {
 	mysql.Table
 
 	// Columns
 	ID              mysql.ColumnString
+	UserID          mysql.ColumnString
 	ModuleName      mysql.ColumnString
 	ModuleType      mysql.ColumnString
 	ModuleDesc      mysql.ColumnString
 	ModuleShortName mysql.ColumnString
 	ModulePrice     mysql.ColumnString
-	Purchased       mysql.ColumnString
+	Purchased       mysql.ColumnBool
+	CreatedAt       mysql.ColumnTimestamp
+	UpdatedAt       mysql.ColumnTimestamp
 
 	AllColumns     mysql.ColumnList
 	MutableColumns mysql.ColumnList
@@ -65,14 +68,17 @@ func newModulesTable(schemaName, tableName, alias string) *ModulesTable {
 func newModulesTableImpl(schemaName, tableName, alias string) modulesTable {
 	var (
 		IDColumn              = mysql.StringColumn("id")
+		UserIDColumn          = mysql.StringColumn("user_id")
 		ModuleNameColumn      = mysql.StringColumn("module_name")
 		ModuleTypeColumn      = mysql.StringColumn("module_type")
 		ModuleDescColumn      = mysql.StringColumn("module_desc")
 		ModuleShortNameColumn = mysql.StringColumn("module_short_name")
 		ModulePriceColumn     = mysql.StringColumn("module_price")
-		PurchasedColumn       = mysql.StringColumn("purchased")
-		allColumns            = mysql.ColumnList{IDColumn, ModuleNameColumn, ModuleTypeColumn, ModuleDescColumn, ModuleShortNameColumn, ModulePriceColumn, PurchasedColumn}
-		mutableColumns        = mysql.ColumnList{ModuleNameColumn, ModuleTypeColumn, ModuleDescColumn, ModuleShortNameColumn, ModulePriceColumn, PurchasedColumn}
+		PurchasedColumn       = mysql.BoolColumn("purchased")
+		CreatedAtColumn       = mysql.TimestampColumn("created_at")
+		UpdatedAtColumn       = mysql.TimestampColumn("updated_at")
+		allColumns            = mysql.ColumnList{IDColumn, UserIDColumn, ModuleNameColumn, ModuleTypeColumn, ModuleDescColumn, ModuleShortNameColumn, ModulePriceColumn, PurchasedColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns        = mysql.ColumnList{UserIDColumn, ModuleNameColumn, ModuleTypeColumn, ModuleDescColumn, ModuleShortNameColumn, ModulePriceColumn, PurchasedColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return modulesTable{
@@ -80,12 +86,15 @@ func newModulesTableImpl(schemaName, tableName, alias string) modulesTable {
 
 		//Columns
 		ID:              IDColumn,
+		UserID:          UserIDColumn,
 		ModuleName:      ModuleNameColumn,
 		ModuleType:      ModuleTypeColumn,
 		ModuleDesc:      ModuleDescColumn,
 		ModuleShortName: ModuleShortNameColumn,
 		ModulePrice:     ModulePriceColumn,
 		Purchased:       PurchasedColumn,
+		CreatedAt:       CreatedAtColumn,
+		UpdatedAt:       UpdatedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

@@ -7,12 +7,19 @@
 
 package model
 
+import (
+	"time"
+)
+
 type Modules struct {
 	ID              string `sql:"primary_key"`
+	UserID          string
 	ModuleName      string
-	ModuleType      *string
+	ModuleType      string
 	ModuleDesc      *string
 	ModuleShortName *string
 	ModulePrice     *string
-	Purchased       *string
+	Purchased       *bool
+	CreatedAt       *time.Time
+	UpdatedAt       *time.Time
 }

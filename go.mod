@@ -5,7 +5,8 @@ go 1.22
 toolchain go1.22.6
 
 require (
-	github.com/go-jet/jet/v2 v2.11.1
+	//	github.com/go-jet/jet v2.3.0+incompatible
+	github.com/go-jet/jet/v2 v2.12.0
 	github.com/go-kit/kit v0.13.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/google/uuid v1.6.0

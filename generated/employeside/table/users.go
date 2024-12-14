@@ -11,16 +11,18 @@ import (
 	"github.com/go-jet/jet/v2/mysql"
 )
 
-var Users = newUsersTable("users", "users", "")
+var Users = newUsersTable("employeside", "users", "")
 
 type usersTable struct {
 	mysql.Table
 
 	// Columns
 	ID        mysql.ColumnString
-	UserName  mysql.ColumnString
+	FirstName mysql.ColumnString
+	LastName  mysql.ColumnString
 	Email     mysql.ColumnString
 	Password  mysql.ColumnString
+	UserName  mysql.ColumnString
 	CreatedAt mysql.ColumnTimestamp
 	UpdatedAt mysql.ColumnTimestamp
 
@@ -64,13 +66,15 @@ func newUsersTable(schemaName, tableName, alias string) *UsersTable {
 func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 	var (
 		IDColumn        = mysql.StringColumn("id")
-		UserNameColumn  = mysql.StringColumn("user_name")
+		FirstNameColumn = mysql.StringColumn("first_name")
+		LastNameColumn  = mysql.StringColumn("last_name")
 		EmailColumn     = mysql.StringColumn("email")
 		PasswordColumn  = mysql.StringColumn("password")
+		UserNameColumn  = mysql.StringColumn("user_name")
 		CreatedAtColumn = mysql.TimestampColumn("created_at")
 		UpdatedAtColumn = mysql.TimestampColumn("updated_at")
-		allColumns      = mysql.ColumnList{IDColumn, UserNameColumn, EmailColumn, PasswordColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns  = mysql.ColumnList{UserNameColumn, EmailColumn, PasswordColumn, CreatedAtColumn, UpdatedAtColumn}
+		allColumns      = mysql.ColumnList{IDColumn, FirstNameColumn, LastNameColumn, EmailColumn, PasswordColumn, UserNameColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns  = mysql.ColumnList{FirstNameColumn, LastNameColumn, EmailColumn, PasswordColumn, UserNameColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return usersTable{
@@ -78,9 +82,11 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 
 		//Columns
 		ID:        IDColumn,
-		UserName:  UserNameColumn,
+		FirstName: FirstNameColumn,
+		LastName:  LastNameColumn,
 		Email:     EmailColumn,
 		Password:  PasswordColumn,
+		UserName:  UserNameColumn,
 		CreatedAt: CreatedAtColumn,
 		UpdatedAt: UpdatedAtColumn,
 
