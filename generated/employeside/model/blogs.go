@@ -12,10 +12,13 @@ import (
 )
 
 type Blogs struct {
-	ID          *string
-	BlogTitle   *string
-	BlogContent *string
-	Status      *string
+	ID          string `sql:"primary_key"`
+	BlogName    string
+	BlogTitle   string
+	BlogContent string
+	ModuleID    string
+	WriterID    string
+	WriterName  *string
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 }

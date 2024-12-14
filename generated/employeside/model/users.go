@@ -13,9 +13,11 @@ import (
 
 type Users struct {
 	ID        string `sql:"primary_key"`
-	UserName  string
+	FirstName string
+	LastName  string
 	Email     string
 	Password  string
+	UserName  string
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 }

@@ -13,4 +13,5 @@ func UseSchema(schema string) {
 	Blogs = Blogs.FromSchema(schema)
 	Modules = Modules.FromSchema(schema)
 	Users = Users.FromSchema(schema)
+	Writer = Writer.FromSchema(schema)
 }

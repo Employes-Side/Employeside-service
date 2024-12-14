@@ -8,9 +8,13 @@ type Blogs struct {
 	ID          string `json:"id"`
 	BlogTitle   string `json:"blog_title"`
 	BlogContent string `json:"blog_content"`
-	Status      string `json:"status"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	BlogName    string `json:"blog_name"`
+	//Status     string  `json:"status"`
+	CreatedAt  int64   `json:"created_at"`
+	UpdatedAt  int64   `json:"updated_at"`
+	ModuleID   string  `json:"module_id"`
+	WriterID   string  `json:"writer_id"`
+	WriterName *string `json:"writer_name"`
 }
 
 type ReadBlogRequest struct {
@@ -33,15 +37,24 @@ type PageBlocks struct {
 }
 
 type CreatBlogParameters struct {
-	BlogTitle   string `json:"blog_title"`
-	BlogContent string `json:"blog_content"`
-	Status      string `json:"status"`
+	BlogTitle   string  `json:"blog_title"`
+	BlogContent string  `json:"blog_content"`
+	ModuleID    string  `json:"module_id"`
+	WriterID    string  `json:"writer_id"`
+	WriterName  *string `json:"writer_name"`
+	BlogName    string  `json:"blog_name"`
+
+	//Status      string `json:"status"`
 }
 
 type UpdateBlogParameters struct {
-	BlogTitle   string `json:"blog_title"`
-	BlogContent string `json:"blog_content"`
-	Status      string `json:"status"`
+	BlogTitle   string  `json:"blog_title"`
+	BlogContent string  `json:"blog_content"`
+	ModuleID    string  `json:"module_id"`
+	WriterID    string  `json:"writer_id"`
+	WriterName  *string `json:"writer_name"`
+	BlogName    string  `json:"blog_name"`
+	// Status      string  `json:"status"`
 }
 
 type BlogManager interface {
