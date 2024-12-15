@@ -23,11 +23,11 @@ type ReadModulesRequest struct {
 	Value string
 }
 
-type ListModulesParameters struct {
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
-	SortBy string `json:"sort_by"`
-	Order  string `json:"order"`
+type ModulesPage struct {
+	TotalRecords int       `json:"total_records"`
+	Users        []Modules `json:"modules"`
+	Limit        int       `json:"limit"`
+	Offset       int       `json:"offset"`
 }
 
 type CreateModulesParameters struct {
@@ -40,10 +40,20 @@ type CreateModulesParameters struct {
 	UserID          string `json:"user_id"`
 }
 
+type UpdateModulesParameters struct {
+	ModuleName      string `json:"module_name"`
+	ModuleType      string `json:"module_type"`
+	Module_Desc     string `json:"module_desc"`
+	ModuleShortName string `json:"module_short_name"`
+	ModulePrice     string `json:"module_price"`
+	Purchased       bool   `json:"purchased"`
+	UserID          string `json:"user_id"`
+}
+
 type ModulesManager interface {
 	Read(ctx context.Context, req ReadModulesRequest) (*Modules, error)
 	Create(ctx context.Context, params CreateModulesParameters) (*Modules, error)
-	// List(ctx context.Context, params ListModulesParameters) (*Modules, error)
-	// Update(ctx context.Context, req ReadModulesRequest, params CreateModulesParameters) (*Modules, error)
-	// Delete(ctx context.Context, req ReadModulesRequest) (*Modules, error)
+	List(ctx context.Context, params ListParameters) (ModulesPage, error)
+	Update(ctx context.Context, req ReadModulesRequest, params UpdateModulesParameters) (*Modules, error)
+	Delete(ctx context.Context, req ReadModulesRequest) (*Modules, error)
 }

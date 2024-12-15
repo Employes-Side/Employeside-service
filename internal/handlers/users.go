@@ -19,8 +19,7 @@ var (
 	errBadRequest     = errors.New("bad request")
 )
 
-func NewHandler(users *endpoints.UserEndpoints) http.Handler {
-	router := mux.NewRouter()
+func NewHandler(router *mux.Router, users *endpoints.UserEndpoints) http.Handler {
 
 	usersPath := router.PathPrefix("/users").Subrouter()
 
