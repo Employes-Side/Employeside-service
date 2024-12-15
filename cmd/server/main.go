@@ -30,9 +30,16 @@ func main() {
 
 	defer dbConn.Close()
 
+	router := mux.NewRouter()
+
 	var userManager repositories.UserRepository
 	{
 		userManager = *repositories.NewManager(dbConn)
+	}
+
+	var writerManager repositories.WriterRepository
+	{
+		writerManager = *repositories.NewWriterManager(dbConn)
 	}
 
 	var blogManager repositories.BlogRepository
@@ -45,24 +52,24 @@ func main() {
 		modulesManager = *repositories.NewModulesManger(dbConn)
 	}
 
-	UserEndpoint := endpoints.NewUserEndpoint(userManager)
-	BlogEndpoint := endpoints.NewBlogEndpoint(blogManager)
-	ModulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
-
-	router := mux.NewRouter()
+	userEndpoint := endpoints.NewUserEndpoint(userManager)
 	{
-		appHandler := handlers.NewHandler(UserEndpoint)
-		router.PathPrefix("/").Handler(appHandler)
+		handlers.NewHandler(router.PathPrefix("/").Subrouter(), userEndpoint)
 	}
 
+	writerEndpoint := endpoints.NewWriterEndpoint(writerManager)
 	{
-		appHandler := handlers.NewBlogHandler(BlogEndpoint)
-		router.PathPrefix("/").Handler(appHandler)
+		handlers.NewWriterHandler(router.PathPrefix("/").Subrouter(), writerEndpoint)
 	}
 
+	blogEndpoint := endpoints.NewBlogEndpoint(blogManager)
 	{
-		appHandler := handlers.NewModuleHandler(ModulesEndpoint)
-		router.PathPrefix("/").Handler(appHandler)
+		handlers.NewBlogHandler(router.PathPrefix("/").Subrouter(), blogEndpoint)
+	}
+
+	modulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
+	{
+		handlers.NewModuleHandler(router.PathPrefix("/").Subrouter(), modulesEndpoint)
 	}
 
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {

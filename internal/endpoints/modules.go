@@ -33,30 +33,30 @@ func (ep *ModulesEndpoints) Read(ctx context.Context, req interface{}) (interfac
 	return ep.manager.Read(ctx, readReq)
 }
 
-// func (ep *BlogEndpoints) Update(ctx context.Context, req interface{}) (interface{}, error) {
-// 	updateReq, ok := req.(models.UpdateBlogParameters)
-// 	if !ok {
-// 		return nil, errors.New("invalid request")
-// 	}
-// 	readReq := models.ReadBlogRequest{
-// 		By:    "id",
-// 		Value: updateReq.BlogTitle,
-// 	}
-// 	return ep.manager.Update(ctx, readReq, updateReq)
-// }
+func (ep *ModulesEndpoints) Update(ctx context.Context, req interface{}) (interface{}, error) {
+	updateReq, ok := req.(modules.UpdateModulesParameters)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	readReq := modules.ReadModulesRequest{
+		By:    "id",
+		Value: updateReq.ModuleName,
+	}
+	return ep.manager.Update(ctx, readReq, updateReq)
+}
 
-// func (ep *BlogEndpoints) Delete(ctx context.Context, req interface{}) (interface{}, error) {
-// 	deleteReq, ok := req.(models.ReadBlogRequest)
-// 	if !ok {
-// 		return nil, errors.New("invalid request")
-// 	}
-// 	return ep.manager.Delete(ctx, deleteReq)
-// }
+func (ep *ModulesEndpoints) Delete(ctx context.Context, req interface{}) (interface{}, error) {
+	deleteReq, ok := req.(modules.ReadModulesRequest)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	return ep.manager.Delete(ctx, deleteReq)
+}
 
-// func (ep *BlogEndpoints) List(ctx context.Context, req interface{}) (interface{}, error) {
-// 	listReq, ok := req.(models.ListBlogsParameters)
-// 	if !ok {
-// 		return nil, errors.New("invalid request")
-// 	}
-// 	return ep.manager.List(ctx, listReq)
-// }
+func (ep *ModulesEndpoints) List(ctx context.Context, req interface{}) (interface{}, error) {
+	listReq, ok := req.(modules.ListParameters)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	return ep.manager.List(ctx, listReq)
+}

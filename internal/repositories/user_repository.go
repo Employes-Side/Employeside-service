@@ -110,9 +110,9 @@ func (mgr *UserRepository) Create(ctx context.Context, params models.CreateUserP
 	realm := model.Users{
 		ID:        id.String(),
 		UserName:  params.UserName,
-		Email:     params.Email,
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
+		Email:     params.Email,
 		Password:  params.Password,
 		CreatedAt: &now,
 		UpdatedAt: &now,
@@ -182,7 +182,7 @@ func (mgr *UserRepository) buildReadClause(req models.ReadUserRequest) (mysql.Bo
 	switch req.By {
 	case "id":
 		return table.Users.ID.EQ(mysql.String(req.Value)), nil
-	case "name":
+	case "user_name":
 		return table.Users.UserName.EQ(mysql.String(req.Value)), nil
 	default:
 		return nil, errors.New("by should be one of 'id' or 'name'")
@@ -196,9 +196,9 @@ func convertoDBModel(user model.Users) (*models.User, error) {
 		ID:        user.ID,
 		UserName:  user.UserName,
 		Email:     user.Email,
+		Password:  user.Password,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
-		Password:  user.Password,
 		CreatedAt: user.CreatedAt.UnixMilli(),
 		UpdatedAt: user.UpdatedAt.UnixMilli(),
 	}, nil
