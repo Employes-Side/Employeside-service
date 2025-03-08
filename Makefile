@@ -2,7 +2,7 @@
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=yourpasswd
+DB_PASSWORD=yourdbpassword
 DB_NAME=employeside
 GEN_PATH=./generated
 SERVER_PATH=./cmd/server/
