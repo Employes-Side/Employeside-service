@@ -59,7 +59,4 @@ go build -o employeside ./cmd/server/
 ./employeside -cfg=config.yaml
 ```
 
-### **Running with Docker**
-```sh
-docker build -t employeside .
-docker run -p 8080:8080 employeside
+
