@@ -4,13 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	// "github.com/go-kit/kit/transport/grpc"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/golang-migrate/migrate/source/file"
 
 	employeside "github.com/Employes-Side/employee-side"
 	"github.com/Employes-Side/employee-side/internal/endpoints"
@@ -23,6 +26,18 @@ import (
 func main() {
 
 	cfg := employeside.LoadConfiguration()
+
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
+		cfg.DB.Username,
+		cfg.DB.Password,
+		cfg.DB.Hostname,
+		cfg.DB.Port,
+		cfg.DB.Database,
+	)
+
+	migrateSQL(dsn, cfg.DB.Database)
+
 	dbConn, err := sql.Open("mysql", cfg.DB.CreateDSN())
 	if err != nil {
 		panic(err)
