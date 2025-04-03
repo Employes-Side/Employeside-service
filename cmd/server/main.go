@@ -67,24 +67,27 @@ func main() {
 		modulesManager = *repositories.NewModulesManger(dbConn)
 	}
 
+	protectedRoutes := router.PathPrefix("/").Subrouter()
+	protectedRoutes.Use(jwtMiddlewareHandler)
+
 	userEndpoint := endpoints.NewUserEndpoint(userManager)
 	{
-		handlers.NewHandler(router.PathPrefix("/").Subrouter(), userEndpoint)
+		handlers.NewHandler(protectedRoutes, userEndpoint)
 	}
 
 	writerEndpoint := endpoints.NewWriterEndpoint(writerManager)
 	{
-		handlers.NewWriterHandler(router.PathPrefix("/").Subrouter(), writerEndpoint)
+		handlers.NewWriterHandler(protectedRoutes, writerEndpoint)
 	}
 
 	blogEndpoint := endpoints.NewBlogEndpoint(blogManager)
 	{
-		handlers.NewBlogHandler(router.PathPrefix("/").Subrouter(), blogEndpoint)
+		handlers.NewBlogHandler(protectedRoutes, blogEndpoint)
 	}
 
 	modulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
 	{
-		handlers.NewModuleHandler(router.PathPrefix("/").Subrouter(), modulesEndpoint)
+		handlers.NewModuleHandler(protectedRoutes, modulesEndpoint)
 	}
 
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
