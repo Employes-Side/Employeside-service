@@ -62,11 +62,28 @@ func (ep *ModulesEndpoints) List(ctx context.Context, req interface{}) (interfac
 }
 
 func (ep *ModulesEndpoints) BulkCreate(ctx context.Context, req interface{}) (interface{}, error) {
-	params, ok := req.(modules.BulkModuleRequest)
+	importReq, ok := req.(modules.BulkImportRequest)
 	if !ok {
 		return nil, errors.New("invalid request")
 	}
-	return ep.manager.BulkAddModules(ctx, params)
+
+	
+	bulkReq := modules.BulkModuleRequest{
+		Modules: importReq.Modules,
+	}
+
+	
+	createdModules, err := ep.manager.BulkAddModules(ctx, bulkReq)
+	if err != nil {
+		return nil, err
+	}
+
+	
+	return modules.BulkImportResponse{
+		Modules:      createdModules,
+		S3Location:   importReq.S3Key,
+		TotalRecords: len(createdModules),
+	}, nil
 }
 
 func (ep *ModulesEndpoints) BulkDelete(ctx context.Context, req interface{}) (interface{}, error) {
