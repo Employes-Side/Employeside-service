@@ -1,7 +1,7 @@
 db:
-  database: users
+  database: employeside
   username: root
-  password: yourpasswd
+  password: Root123
   hostname: localhost
   port: 3306
 

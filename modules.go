@@ -12,10 +12,11 @@ type Modules struct {
 	ModuleType      string     `json:"module_type"`
 	Module_Desc     string     `json:"module_desc"`
 	ModuleShortName string     `json:"module_short_name"`
-	ModulePrice     string     `json:"module_price"`
+	ModulePrice     int64      `json:"module_price"`
 	Purchased       bool       `json:"purchased"`
 	CreatedAt       *time.Time `json:"created_at"`
 	UpdatedAt       *time.Time `json:"updated_at"`
+	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
 }
 
 type ReadModulesRequest struct {
@@ -35,7 +36,7 @@ type CreateModulesParameters struct {
 	ModuleType      string `json:"module_type"`
 	Module_Desc     string `json:"module_desc"`
 	ModuleShortName string `json:"module_short_name"`
-	ModulePrice     string `json:"module_price"`
+	ModulePrice     int64  `json:"module_price"`
 	Purchased       bool   `json:"purchased"`
 	UserID          string `json:"user_id"`
 }
@@ -45,7 +46,7 @@ type UpdateModulesParameters struct {
 	ModuleType      string `json:"module_type"`
 	Module_Desc     string `json:"module_desc"`
 	ModuleShortName string `json:"module_short_name"`
-	ModulePrice     string `json:"module_price"`
+	ModulePrice     int64  `json:"module_price"`
 	Purchased       bool   `json:"purchased"`
 	UserID          string `json:"user_id"`
 }
@@ -56,4 +57,14 @@ type ModulesManager interface {
 	List(ctx context.Context, params ListParameters) (ModulesPage, error)
 	Update(ctx context.Context, req ReadModulesRequest, params UpdateModulesParameters) (*Modules, error)
 	Delete(ctx context.Context, req ReadModulesRequest) (*Modules, error)
+	BulkAddModules(ctx context.Context, req BulkModuleRequest) ([]*Modules, error)
+	BulkDelete(ctx context.Context, req BulkDeleteRequest) error
+}
+
+type BulkModuleRequest struct {
+    Modules []Modules `json:"modules"`
+}
+
+type BulkDeleteRequest struct {
+    IDs []string `json:"ids"`
 }

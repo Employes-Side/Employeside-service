@@ -35,6 +35,7 @@ func (mgr *ModulesRepository) List(ctx context.Context, params models.ListParame
 
 	statement := table.Modules.
 		SELECT(table.Modules.AllColumns).
+		WHERE(table.Modules.DeletedAt.IS_NULL()).
 		ORDER_BY(orderExpr).
 		LIMIT(int64(params.Limit)).
 		OFFSET(int64(params.Offset))
@@ -90,7 +91,7 @@ func (mgr *ModulesRepository) Read(ctx context.Context, req modules.ReadModulesR
 
 	}
 
-	statement := table.Modules.SELECT(table.Modules.AllColumns).WHERE(conditions)
+	statement := table.Modules.SELECT(table.Modules.AllColumns).WHERE(conditions.AND(table.Modules.DeletedAt.IS_NULL()))
 
 	var module model.Modules
 	if err := statement.QueryContext(ctx, mgr.db, &module); err != nil {
@@ -137,9 +138,10 @@ func (mgr *ModulesRepository) Delete(ctx context.Context, req models.ReadModules
 		return nil, err
 	}
 
-	conditions := table.Modules.ID.EQ(mysql.String(module.ID))
-	statement := table.Modules.DELETE().WHERE(conditions)
-	if _, err := statement.ExecContext(ctx, mgr.db); err != nil {
+	now := time.Now()
+	updateStatement := table.Modules.UPDATE(table.Modules.DeletedAt).MODEL(model.Modules{DeletedAt: &now}).WHERE(table.Modules.ID.EQ(mysql.String(module.ID)))
+
+	if _, err := updateStatement.ExecContext(ctx, mgr.db); err != nil {
 		return nil, err
 	}
 
@@ -166,12 +168,14 @@ func (mgr *ModulesRepository) Update(ctx context.Context, req models.ReadModules
 	}
 
 	updateStatement := table.Modules.UPDATE(
-		table.Users.UserName,
-		table.Users.Email,
-		table.Users.Password,
-		table.Users.FirstName,
-		table.Users.LastName,
-		table.Users.UpdatedAt,
+		table.Modules.UserID,
+		table.Modules.ModuleName,
+		table.Modules.ModuleType,
+		table.Modules.ModuleDesc,
+		table.Modules.ModuleShortName,
+		table.Modules.ModulePrice,
+		table.Modules.Purchased,
+		table.Modules.UpdatedAt,
 	).MODEL(updateModel).WHERE(table.Modules.ID.EQ(mysql.String(module.ID)))
 
 	if _, err := updateStatement.ExecContext(ctx, mgr.db); err != nil {
@@ -192,16 +196,93 @@ func (mgr *ModulesRepository) buildReadClause(req modules.ReadModulesRequest) (m
 }
 
 func convertToModulesDBMode(module model.Modules) (*modules.Modules, error) {
+	var moduleDesc, moduleShortName string
+	var modulePrice int64
+	var purchased bool
+
+	if module.ModuleDesc != nil {
+		moduleDesc = *module.ModuleDesc
+	}
+	if module.ModuleShortName != nil {
+		moduleShortName = *module.ModuleShortName
+	}
+	if module.ModulePrice != nil {
+		modulePrice = *module.ModulePrice
+	}
+	if module.Purchased != nil {
+		purchased = *module.Purchased
+	}
+
 	return &modules.Modules{
 		ID:              module.ID,
 		ModuleName:      module.ModuleName,
 		ModuleType:      module.ModuleType,
-		Module_Desc:     *module.ModuleDesc,
-		ModuleShortName: *module.ModuleShortName,
-		ModulePrice:     *module.ModulePrice,
-		Purchased:       *module.Purchased,
+		Module_Desc:     moduleDesc,
+		ModuleShortName: moduleShortName,
+		ModulePrice:     modulePrice,
+		Purchased:       purchased,
 		UserID:          module.UserID,
 		CreatedAt:       module.CreatedAt,
 		UpdatedAt:       module.UpdatedAt,
+		DeletedAt:       module.DeletedAt,
 	}, nil
+}
+
+func (mgr *ModulesRepository) BulkAddModules(ctx context.Context, req models.BulkModuleRequest) ([]*models.Modules, error) {
+	var moduleModels []model.Modules
+	now := time.Now()
+
+	for _, m := range req.Modules {
+		id := uuid.New()
+		moduleModels = append(moduleModels, model.Modules{
+			ID:              id.String(),
+			UserID:          m.UserID,
+			ModuleName:      m.ModuleName,
+			ModuleType:      m.ModuleType,
+			ModuleDesc:      &m.Module_Desc,
+			ModuleShortName: &m.ModuleShortName,
+			ModulePrice:     &m.ModulePrice,
+			Purchased:       &m.Purchased,
+			CreatedAt:       &now,
+			UpdatedAt:       &now,
+		})
+	}
+
+	statement := table.Modules.INSERT(table.Modules.AllColumns).MODELS(moduleModels)
+
+	_, err := statement.ExecContext(ctx, mgr.db)
+	if err != nil {
+		log.Printf("ERROR: BulkAddModules database error: %v", err)
+		return nil, err
+	}
+
+	var createdModules []*models.Modules
+	for _, m := range moduleModels {
+		createdModule, err := convertToModulesDBMode(m)
+		if err != nil {
+			return nil, err
+		}
+		createdModules = append(createdModules, createdModule)
+	}
+
+	return createdModules, nil
+}
+
+func (mgr *ModulesRepository) BulkDelete(ctx context.Context, req models.BulkDeleteRequest) error {
+	now := time.Now()
+	var ids []mysql.Expression
+	for _, id := range req.IDs {
+		ids = append(ids, mysql.String(id))
+	}
+
+	stmt := table.Modules.UPDATE(table.Modules.DeletedAt).
+		MODEL(model.Modules{DeletedAt: &now}).
+		WHERE(table.Modules.ID.IN(ids...))
+
+	_, err := stmt.ExecContext(ctx, mgr.db)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

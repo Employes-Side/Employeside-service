@@ -60,3 +60,19 @@ func (ep *ModulesEndpoints) List(ctx context.Context, req interface{}) (interfac
 	}
 	return ep.manager.List(ctx, listReq)
 }
+
+func (ep *ModulesEndpoints) BulkCreate(ctx context.Context, req interface{}) (interface{}, error) {
+	params, ok := req.(modules.BulkModuleRequest)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	return ep.manager.BulkAddModules(ctx, params)
+}
+
+func (ep *ModulesEndpoints) BulkDelete(ctx context.Context, req interface{}) (interface{}, error) {
+	params, ok := req.(modules.BulkDeleteRequest)
+	if !ok {
+		return nil, errors.New("invalid request")
+	}
+	return nil, ep.manager.BulkDelete(ctx, params)
+}

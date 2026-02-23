@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -11,6 +12,11 @@ import (
 	"github.com/Employes-Side/employee-side/internal/endpoints"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+)
+
+var (
+	errInvalidRequest = errors.New("invalid request")
+	errBadRequest     = errors.New("bad request")
 )
 
 func NewModuleHandler(router *mux.Router, modules *endpoints.ModulesEndpoints) http.Handler {
@@ -23,6 +29,24 @@ func NewModuleHandler(router *mux.Router, modules *endpoints.ModulesEndpoints) h
 				modules.Create,
 				decodeCreateModuleRequest,
 				kithttp.EncodeJSONResponse,
+			),
+		)
+
+		modulePath.Methods(http.MethodPost).Path("/bulk").Handler(
+			kithttp.NewServer(
+				modules.BulkCreate,
+				decodeBulkCreateModuleRequest,
+				kithttp.EncodeJSONResponse,
+				kithttp.ServerErrorEncoder(customErrorEncoder),
+			),
+		)
+
+		modulePath.Methods(http.MethodPost).Path("/bulk_delete").Handler(
+			kithttp.NewServer(
+				modules.BulkDelete,
+				decodeBulkDeleteRequest,
+				kithttp.EncodeJSONResponse,
+				kithttp.ServerErrorEncoder(customErrorEncoder),
 			),
 		)
 
@@ -61,8 +85,36 @@ func NewModuleHandler(router *mux.Router, modules *endpoints.ModulesEndpoints) h
 	return router
 }
 
+func customErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if errors.Is(err, errBadRequest) {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": err.Error(),
+	})
+}
+
 func decodeCreateModuleRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var params modules.CreateModulesParameters
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return nil, errBadRequest
+	}
+	return params, nil
+}
+
+func decodeBulkCreateModuleRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var params modules.BulkModuleRequest
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return nil, errBadRequest
+	}
+	return params, nil
+}
+
+func decodeBulkDeleteRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var params modules.BulkDeleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return nil, errBadRequest
 	}

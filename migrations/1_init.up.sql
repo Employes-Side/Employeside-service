@@ -1,5 +1,3 @@
-start transaction;
-
 CREATE TABLE users (
     id VARCHAR(100) PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -33,10 +31,11 @@ CREATE TABLE modules (
     module_type varchar(255) NOT NULL,
     module_desc varchar(255),
     module_short_name VARCHAR(255),
-    module_price VARCHAR(255),
+    module_price BIGINT(255),
     purchased boolean,
     created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) 
 
 );
@@ -54,5 +53,3 @@ CREATE TABLE blogs (
     CONSTRAINT fk_module FOREIGN KEY (module_id) REFERENCES modules(id) ,
     CONSTRAINT fk_writer FOREIGN KEY (writer_id) REFERENCES writer(id) 
 );
-
-commit;
