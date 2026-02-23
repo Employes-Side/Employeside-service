@@ -62,9 +62,24 @@ type ModulesManager interface {
 }
 
 type BulkModuleRequest struct {
-    Modules []Modules `json:"modules"`
+	Modules []Modules `json:"modules"`
 }
 
 type BulkDeleteRequest struct {
-    IDs []string `json:"ids"`
+	IDs []string `json:"ids"`
+}
+
+
+type BulkImportRequest struct {
+	Format  string    `json:"format"`            // "json" or "csv"
+	Data    string    `json:"data"`              // Raw JSON or CSV data
+	Modules []Modules `json:"modules,omitempty"` // For JSON format
+	S3Key   string    `json:"s3_key,omitempty"`  // S3 location after upload
+}
+
+
+type BulkImportResponse struct {
+	Modules      []*Modules `json:"modules"`
+	S3Location   string     `json:"s3_location"`
+	TotalRecords int        `json:"total_records"`
 }
