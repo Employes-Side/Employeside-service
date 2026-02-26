@@ -199,6 +199,7 @@ func convertToModulesDBMode(module model.Modules) (*modules.Modules, error) {
 	var moduleDesc, moduleShortName string
 	var modulePrice int64
 	var purchased bool
+	var s3Key, s3Url *string
 
 	if module.ModuleDesc != nil {
 		moduleDesc = *module.ModuleDesc
@@ -212,6 +213,12 @@ func convertToModulesDBMode(module model.Modules) (*modules.Modules, error) {
 	if module.Purchased != nil {
 		purchased = *module.Purchased
 	}
+	if module.S3Key != nil {
+		s3Key = module.S3Key
+	}
+	if module.S3Url != nil {
+		s3Url = module.S3Url
+	}
 
 	return &modules.Modules{
 		ID:              module.ID,
@@ -221,6 +228,8 @@ func convertToModulesDBMode(module model.Modules) (*modules.Modules, error) {
 		ModuleShortName: moduleShortName,
 		ModulePrice:     modulePrice,
 		Purchased:       purchased,
+		S3Key:           s3Key,
+		S3Url:           s3Url,
 		UserID:          module.UserID,
 		CreatedAt:       module.CreatedAt,
 		UpdatedAt:       module.UpdatedAt,
@@ -243,6 +252,8 @@ func (mgr *ModulesRepository) BulkAddModules(ctx context.Context, req models.Bul
 			ModuleShortName: &m.ModuleShortName,
 			ModulePrice:     &m.ModulePrice,
 			Purchased:       &m.Purchased,
+			S3Key:           m.S3Key,
+			S3Url:           m.S3Url,
 			CreatedAt:       &now,
 			UpdatedAt:       &now,
 		})
@@ -250,9 +261,19 @@ func (mgr *ModulesRepository) BulkAddModules(ctx context.Context, req models.Bul
 
 	statement := table.Modules.INSERT(table.Modules.AllColumns).MODELS(moduleModels)
 
-	_, err := statement.ExecContext(ctx, mgr.db)
+	tx, err := mgr.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	_, err = statement.ExecContext(ctx, tx)
 	if err != nil {
 		log.Printf("ERROR: BulkAddModules database error: %v", err)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -285,4 +306,27 @@ func (mgr *ModulesRepository) BulkDelete(ctx context.Context, req models.BulkDel
 	}
 
 	return nil
+}
+
+func (mgr *ModulesRepository) GetS3Keys(ctx context.Context, ids []string) ([]string, error) {
+	var idExprs []mysql.Expression
+	for _, id := range ids {
+		idExprs = append(idExprs, mysql.String(id))
+	}
+
+	stmt := table.Modules.SELECT(table.Modules.S3Key).
+		WHERE(table.Modules.ID.IN(idExprs...).AND(table.Modules.S3Key.IS_NOT_NULL()))
+
+	var dest []struct {
+		S3Key string
+	}
+	if err := stmt.QueryContext(ctx, mgr.db, &dest); err != nil {
+		return nil, err
+	}
+
+	var keys []string
+	for _, d := range dest {
+		keys = append(keys, d.S3Key)
+	}
+	return keys, nil
 }
