@@ -13,6 +13,18 @@ func NewModuleEndpoint(manager repositories.ModulesRepository) *ModulesEndpoints
 	return &ModulesEndpoints{manager}
 }
 
+// ModuleEndpointsInterface defines the interface for module endpoints
+// This allows for easier mocking in tests
+type ModuleEndpointsInterface interface {
+	Create(ctx context.Context, req interface{}) (interface{}, error)
+	Read(ctx context.Context, req interface{}) (interface{}, error)
+	Update(ctx context.Context, req interface{}) (interface{}, error)
+	Delete(ctx context.Context, req interface{}) (interface{}, error)
+	List(ctx context.Context, req interface{}) (interface{}, error)
+	BulkCreate(ctx context.Context, req interface{}) (interface{}, error)
+	BulkDelete(ctx context.Context, req interface{}) (interface{}, error)
+}
+
 type ModulesEndpoints struct {
 	manager repositories.ModulesRepository
 }
@@ -40,7 +52,7 @@ func (ep *ModulesEndpoints) Update(ctx context.Context, req interface{}) (interf
 	}
 	readReq := modules.ReadModulesRequest{
 		By:    "id",
-		Value: updateReq.ModuleName,
+		Value: updateReq.ID,
 	}
 	return ep.manager.Update(ctx, readReq, updateReq)
 }
@@ -62,26 +74,19 @@ func (ep *ModulesEndpoints) List(ctx context.Context, req interface{}) (interfac
 }
 
 func (ep *ModulesEndpoints) BulkCreate(ctx context.Context, req interface{}) (interface{}, error) {
-	importReq, ok := req.(modules.BulkImportRequest)
+	bulkReq, ok := req.(modules.BulkModuleRequest)
 	if !ok {
 		return nil, errors.New("invalid request")
 	}
 
-	
-	bulkReq := modules.BulkModuleRequest{
-		Modules: importReq.Modules,
-	}
-
-	
 	createdModules, err := ep.manager.BulkAddModules(ctx, bulkReq)
 	if err != nil {
 		return nil, err
 	}
 
-	
 	return modules.BulkImportResponse{
 		Modules:      createdModules,
-		S3Location:   importReq.S3Key,
+		S3Location:   "",  // Will be set by handler after S3 upload
 		TotalRecords: len(createdModules),
 	}, nil
 }

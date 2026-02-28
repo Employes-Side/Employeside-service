@@ -68,7 +68,6 @@ func main() {
 		modulesManager = *repositories.NewModulesManger(dbConn)
 	}
 
-	
 	var s3Service *services.S3Service
 	{
 		s3Service, err = services.NewS3Service(services.S3Config{
@@ -104,7 +103,7 @@ func main() {
 
 	modulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
 	{
-		handlers.NewModuleHandler(protectedRoutes, modulesEndpoint, s3Service)
+		handlers.NewModuleHandler(protectedRoutes, modulesEndpoint, s3Service, &modulesManager)
 	}
 
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {

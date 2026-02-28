@@ -75,3 +75,14 @@ func GenerateS3Key(prefix string, extension string) string {
 	timestamp := time.Now().Format("2006/01/02/150405")
 	return fmt.Sprintf("%s/%s.%s", prefix, timestamp, extension)
 }
+
+func (s *S3Service) DeleteFile(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucketName),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete file from S3: %w", err)
+	}
+	return nil
+}

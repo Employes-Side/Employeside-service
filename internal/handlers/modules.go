@@ -6,15 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
-	models "github.com/Employes-Side/employee-side"
 	modules "github.com/Employes-Side/employee-side"
 	"github.com/Employes-Side/employee-side/internal/endpoints"
 	"github.com/Employes-Side/employee-side/internal/services"
+	gokitendpoint "github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -23,18 +26,32 @@ var (
 	errBadRequest     = errors.New("bad request")
 )
 
-type ModuleHandler struct {
-	endpoints *endpoints.ModulesEndpoints
-	s3Service *services.S3Service
+type S3Service interface {
+	UploadFile(ctx context.Context, key string, data []byte, contentType string) (string, error)
+	DeleteFile(ctx context.Context, key string) error
 }
 
-func NewModuleHandler(router *mux.Router, moduleEndpoints *endpoints.ModulesEndpoints, s3Svc *services.S3Service) http.Handler {
+type ModuleRepository interface {
+	GetS3Keys(ctx context.Context, ids []string) ([]string, error)
+	BulkDelete(ctx context.Context, req modules.BulkDeleteRequest) error
+}
+
+type ModuleHandler struct {
+	endpoints endpoints.ModuleEndpointsInterface
+	s3Service S3Service
+	repo      ModuleRepository
+}
+
+func NewModuleHandler(router *mux.Router, moduleEndpoints endpoints.ModuleEndpointsInterface, s3Svc S3Service, repo ModuleRepository) http.Handler {
 	handler := &ModuleHandler{
 		endpoints: moduleEndpoints,
 		s3Service: s3Svc,
+		repo:      repo,
 	}
 
 	modulePath := router.PathPrefix("/modules").Subrouter()
+	modulePath.Use(requestIDMiddleware)
+	modulePath.Use(latencyMiddleware)
 
 	{
 		modulePath.Methods(http.MethodPost).Path("").Handler(
@@ -47,21 +64,14 @@ func NewModuleHandler(router *mux.Router, moduleEndpoints *endpoints.ModulesEndp
 
 		modulePath.Methods(http.MethodPost).Path("/bulk").Handler(
 			kithttp.NewServer(
-				handler.endpoints.BulkCreate,
+				handler.bulkCreatePipeline(handler.endpoints.BulkCreate),
 				handler.decodeBulkImportRequest,
 				kithttp.EncodeJSONResponse,
 				kithttp.ServerErrorEncoder(customErrorEncoder),
 			),
 		)
 
-		modulePath.Methods(http.MethodPost).Path("/bulk_delete").Handler(
-			kithttp.NewServer(
-				handler.endpoints.BulkDelete,
-				decodeBulkDeleteRequest,
-				kithttp.EncodeJSONResponse,
-				kithttp.ServerErrorEncoder(customErrorEncoder),
-			),
-		)
+		modulePath.Methods(http.MethodPost).Path("/bulk_delete").HandlerFunc(handler.handleAsyncBulkDelete)
 
 		modulePath.Methods(http.MethodGet).Path("/{id}").Handler(
 			kithttp.NewServer(
@@ -98,6 +108,156 @@ func NewModuleHandler(router *mux.Router, moduleEndpoints *endpoints.ModulesEndp
 	return router
 }
 
+func latencyMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		reqID, _ := r.Context().Value("request-id").(string)
+		
+		// Create a response writer wrapper to capture status code
+		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+		
+		next.ServeHTTP(wrapped, r.WithContext(r.Context()))
+		
+		duration := time.Since(start)
+		if duration > 2*time.Second {
+			log.Printf("WARN [%s] High latency detected: %v", reqID, duration)
+		}
+	})
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func requestIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqID := r.Header.Get("X-Request-ID")
+		if reqID == "" {
+			reqID = uuid.New().String()
+		}
+		ctx := context.WithValue(r.Context(), "request-id", reqID)
+		w.Header().Set("X-Request-ID", reqID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (h *ModuleHandler) bulkCreatePipeline(next gokitendpoint.Endpoint) gokitendpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(modules.BulkImportRequest)
+		reqID, _ := ctx.Value("request-id").(string)
+
+		start := time.Now()
+		log.Printf("[%s] Starting Bulk Create Operation", reqID)
+
+		s3Start := time.Now()
+
+		var moduleData []byte
+		var contentType string
+		if req.Format == "csv" {
+			moduleData = []byte(req.Data)
+			contentType = "text/csv"
+		} else {
+			moduleData, _ = json.Marshal(req.Modules)
+			contentType = "application/json"
+		}
+
+		s3Key := services.GenerateS3Key("modules/bulk", req.Format)
+		s3Url, err := h.s3Service.UploadFile(ctx, s3Key, moduleData, contentType)
+		s3Latency := time.Since(s3Start)
+
+		if err != nil {
+			log.Printf("[%s] S3 Upload Failed: %v", reqID, err)
+			return nil, fmt.Errorf("failed to upload to S3: %w", err)
+		}
+
+		for i := range req.Modules {
+			req.Modules[i].S3Key = &s3Key
+			req.Modules[i].S3Url = &s3Url
+		}
+
+		bulkReq := modules.BulkModuleRequest{
+			Modules: req.Modules,
+		}
+
+		dbStart := time.Now()
+		resp, err := next(ctx, bulkReq)
+		dbLatency := time.Since(dbStart)
+
+		if err != nil {
+			log.Printf("[%s] DB Transaction Failed: %v. Cleaning up S3...", reqID, err)
+			cleanupCtx := context.WithValue(context.WithoutCancel(ctx), "request-id", reqID)
+			go func() {
+				if delErr := h.s3Service.DeleteFile(cleanupCtx, s3Key); delErr != nil {
+					log.Printf("[%s] CRITICAL: Failed to cleanup S3 file %s: %v", reqID, s3Key, delErr)
+				} else {
+					log.Printf("[%s] S3 Cleanup Successful", reqID)
+				}
+			}()
+			return nil, err
+		}
+
+		totalDuration := time.Since(start)
+		log.Printf("[%s] Bulk Create Completed. Total: %v (S3: %v, DB: %v)", reqID, totalDuration, s3Latency, dbLatency)
+
+		if totalDuration > 2*time.Second {
+			log.Printf("WARN [%s] High Latency Detected! Total: %v (S3: %v, DB: %v)", reqID, totalDuration, s3Latency, dbLatency)
+		}
+
+		return resp, nil
+	}
+}
+
+func (h *ModuleHandler) handleAsyncBulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req modules.BulkDeleteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	jobID := uuid.New().String()
+	reqID, _ := r.Context().Value("request-id").(string)
+
+	go func(jobID, reqID string, deleteReq modules.BulkDeleteRequest) {
+		// Use detached context for async processing
+		ctx := context.WithValue(context.Background(), "request-id", reqID)
+		log.Printf("[%s] Starting Async Delete Job %s for %d items", reqID, jobID, len(deleteReq.IDs))
+
+		keys, err := h.repo.GetS3Keys(ctx, deleteReq.IDs)
+		if err != nil {
+			log.Printf("[%s] Job %s Failed to fetch S3 keys: %v", reqID, jobID, err)
+			return
+		}
+
+		for _, key := range keys {
+			if key != "" {
+				if err := h.s3Service.DeleteFile(ctx, key); err != nil {
+					log.Printf("[%s] Job %s Failed to delete S3 key %s: %v", reqID, jobID, key, err)
+				}
+			}
+		}
+
+		if err := h.repo.BulkDelete(ctx, deleteReq); err != nil {
+			log.Printf("[%s] Job %s Failed to delete from DB: %v", reqID, jobID, err)
+			return
+		}
+
+		log.Printf("[%s] Async Delete Job %s Completed", reqID, jobID)
+	}(jobID, reqID, req)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(map[string]string{
+		"job_id": jobID,
+		"status": "accepted",
+	})
+}
+
 func customErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if errors.Is(err, errBadRequest) {
@@ -132,73 +292,43 @@ func (h *ModuleHandler) decodeBulkImportRequest(_ context.Context, r *http.Reque
 		return nil, errBadRequest
 	}
 
-	// Determine format
 	format := strings.ToLower(req.Format)
 	if format == "" {
 		format = "json"
 	}
 
-	var moduleData []byte
-	var contentType string
-
-	if format == "csv" {
-		moduleData = []byte(req.Data)
-		contentType = "text/csv"
-	} else {
-		
-		if len(req.Modules) > 0 {
-			var err error
-			moduleData, err = json.Marshal(req.Modules)
-			if err != nil {
-				return nil, errBadRequest
-			}
-		} else if req.Data != "" {
-			moduleData = []byte(req.Data)
-		}
-		contentType = "application/json"
-	}
-
-	if len(moduleData) == 0 {
-		return nil, errBadRequest
-	}
-
-	
-	s3Key := services.GenerateS3Key("modules/bulk", format)
-	s3Location, err := h.s3Service.UploadFile(context.Background(), s3Key, moduleData, contentType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload to S3: %w", err)
-	}
-
-	
 	var parsedModules []modules.Modules
 	if format == "csv" {
-		parsedModules, err = parseCSVModules(string(moduleData))
+		var err error
+		parsedModules, err = parseCSVModules(req.Data)
 		if err != nil {
 			return nil, errBadRequest
 		}
 	} else {
-		if err := json.Unmarshal(moduleData, &parsedModules); err != nil {
-			return nil, errBadRequest
+		if len(req.Modules) == 0 && req.Data != "" {
+			if err := json.Unmarshal([]byte(req.Data), &parsedModules); err != nil {
+				return nil, errBadRequest
+			}
+		} else {
+			parsedModules = req.Modules
 		}
 	}
 
 	return modules.BulkImportRequest{
 		Format:  format,
 		Modules: parsedModules,
-		S3Key:   s3Location,
+		Data:    req.Data,
 	}, nil
 }
 
 func parseCSVModules(csvData string) ([]modules.Modules, error) {
 	reader := csv.NewReader(strings.NewReader(csvData))
 
-	
 	header, err := reader.Read()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CSV header: %w", err)
 	}
 
-	
 	fieldIndex := make(map[string]int)
 	for i, h := range header {
 		fieldIndex[strings.TrimSpace(h)] = i
@@ -279,7 +409,7 @@ func decodeListModuleRequest(_ context.Context, r *http.Request) (interface{}, e
 		order = "asc"
 	}
 
-	return models.ListParameters{
+	return modules.ListParameters{
 		Limit:  limit,
 		Offset: offset,
 		Order:  order,
@@ -292,10 +422,10 @@ func decodeUpdateModuleRequest(_ context.Context, r *http.Request) (interface{},
 		return nil, errInvalidRequest
 	}
 
-	var params models.UpdateBlogParameters
+	var params modules.UpdateModulesParameters
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return nil, errBadRequest
 	}
-	params.BlogTitle = id
+	params.ID = id
 	return params, nil
 }
