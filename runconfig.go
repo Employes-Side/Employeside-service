@@ -16,6 +16,7 @@ import (
 
 type Configuration struct {
 	DB      DatabaseConfiguration `yaml:"db" validate:"required"`
+	S3      S3Configuration       `yaml:"s3"`
 	Bind    BindingConfiguration  `yaml:"bind" validate:"required"`
 	Profile string                `yaml:"-"`
 }
@@ -30,6 +31,15 @@ type DatabaseConfiguration struct {
 	Password string `validate:"required" yaml:"password"`
 	Hostname string `validate:"required" yaml:"hostname"`
 	Port     int    `validate:"required" yaml:"port"`
+}
+
+type S3Configuration struct {
+	BucketName     string `yaml:"bucket_name"`
+	Region         string `yaml:"region"`
+	AccessKey      string `yaml:"access_key"`
+	SecretKey      string `yaml:"secret_key"`
+	Endpoint       string `yaml:"endpoint"`
+	ForcePathStyle bool   `yaml:"force_path_style"`
 }
 
 func (cfg DatabaseConfiguration) CreateDSN() string {

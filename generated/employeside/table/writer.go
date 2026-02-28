@@ -30,6 +30,7 @@ type writerTable struct {
 
 	AllColumns     mysql.ColumnList
 	MutableColumns mysql.ColumnList
+	DefaultColumns mysql.ColumnList
 }
 
 type WriterTable struct {
@@ -79,6 +80,7 @@ func newWriterTableImpl(schemaName, tableName, alias string) writerTable {
 		UpdatedAtColumn  = mysql.TimestampColumn("updated_at")
 		allColumns       = mysql.ColumnList{IDColumn, FirstNameColumn, LastNameColumn, EmailColumn, UserNameColumn, PasswordColumn, IsVerifiedColumn, IsActiveColumn, CreatedAtColumn, UpdatedAtColumn}
 		mutableColumns   = mysql.ColumnList{FirstNameColumn, LastNameColumn, EmailColumn, UserNameColumn, PasswordColumn, IsVerifiedColumn, IsActiveColumn, CreatedAtColumn, UpdatedAtColumn}
+		defaultColumns   = mysql.ColumnList{CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return writerTable{
@@ -98,5 +100,6 @@ func newWriterTableImpl(schemaName, tableName, alias string) writerTable {
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
+		DefaultColumns: defaultColumns,
 	}
 }

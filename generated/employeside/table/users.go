@@ -28,6 +28,7 @@ type usersTable struct {
 
 	AllColumns     mysql.ColumnList
 	MutableColumns mysql.ColumnList
+	DefaultColumns mysql.ColumnList
 }
 
 type UsersTable struct {
@@ -75,6 +76,7 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 		UpdatedAtColumn = mysql.TimestampColumn("updated_at")
 		allColumns      = mysql.ColumnList{IDColumn, FirstNameColumn, LastNameColumn, EmailColumn, PasswordColumn, UserNameColumn, CreatedAtColumn, UpdatedAtColumn}
 		mutableColumns  = mysql.ColumnList{FirstNameColumn, LastNameColumn, EmailColumn, PasswordColumn, UserNameColumn, CreatedAtColumn, UpdatedAtColumn}
+		defaultColumns  = mysql.ColumnList{CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return usersTable{
@@ -92,5 +94,6 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
+		DefaultColumns: defaultColumns,
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/Employes-Side/employee-side/internal/endpoints"
 	"github.com/Employes-Side/employee-side/internal/handlers"
 	"github.com/Employes-Side/employee-side/internal/repositories"
+	"github.com/Employes-Side/employee-side/internal/services"
 	"github.com/gorilla/mux"
 	"k8s.io/klog"
 )
@@ -67,6 +68,21 @@ func main() {
 		modulesManager = *repositories.NewModulesManger(dbConn)
 	}
 
+	var s3Service *services.S3Service
+	{
+		s3Service, err = services.NewS3Service(services.S3Config{
+			BucketName:     cfg.S3.BucketName,
+			Region:         cfg.S3.Region,
+			AccessKey:      cfg.S3.AccessKey,
+			SecretKey:      cfg.S3.SecretKey,
+			Endpoint:       cfg.S3.Endpoint,
+			ForcePathStyle: cfg.S3.ForcePathStyle,
+		})
+		if err != nil {
+			klog.Warningf("Failed to initialize S3 service: %v", err)
+		}
+	}
+
 	protectedRoutes := router.PathPrefix("/").Subrouter()
 	protectedRoutes.Use(jwtMiddlewareHandler)
 
@@ -87,7 +103,7 @@ func main() {
 
 	modulesEndpoint := endpoints.NewModuleEndpoint(modulesManager)
 	{
-		handlers.NewModuleHandler(protectedRoutes, modulesEndpoint)
+		handlers.NewModuleHandler(protectedRoutes, modulesEndpoint, s3Service, &modulesManager)
 	}
 
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {

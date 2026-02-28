@@ -31,7 +31,7 @@ CREATE TABLE modules (
     module_type varchar(255) NOT NULL,
     module_desc varchar(255),
     module_short_name VARCHAR(255),
-    module_price VARCHAR(255),
+    module_price BIGINT(255),
     purchased boolean,
     created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

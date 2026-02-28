@@ -21,7 +21,7 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 			return token, errors.New("invalid audience")
 		}
 
-		iss := "https://dev-37ekikkl0pu50lfc.us.auth0.com/"
+		iss := "https://dev-x4cy6660kcvomc3e.us.auth0.com/"
 		checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
 		if !checkIss {
 			return token, errors.New("invalid issuer")
@@ -29,10 +29,13 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 
 		cert, err := getPemCert(token)
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 
-		result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+		result, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+		if err != nil {
+			return nil, err
+		}
 		return result, nil
 	},
 	SigningMethod: jwt.SigningMethodRS256,
@@ -52,7 +55,7 @@ func jwtMiddlewareHandler(next http.Handler) http.Handler {
 func getPemCert(token *jwt.Token) (string, error) {
 
 	cert := ""
-	resp, err := http.Get("https://dev-37ekikkl0pu50lfc.us.auth0.com/.well-known/jwks.json")
+	resp, err := http.Get("https://dev-x4cy6660kcvomc3e.us.auth0.com/.well-known/jwks.json")
 
 	if err != nil {
 		return cert, err
@@ -69,8 +72,9 @@ func getPemCert(token *jwt.Token) (string, error) {
 
 	for k, _ := range jwks.Keys {
 		if token.Header["kid"] == jwks.Keys[k].Kid {
-			cert = "-----BEGIN CERTIFICATE-----\n" + jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
-
+			if len(jwks.Keys[k].X5c) > 0 {
+				cert = "-----BEGIN CERTIFICATE-----\n" + jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
+			}
 		}
 	}
 

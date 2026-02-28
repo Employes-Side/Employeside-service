@@ -2,7 +2,7 @@
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=yourdbpassword
+DB_PASSWORD=Root123
 DB_NAME=employeside
 GEN_PATH=./generated
 SERVER_PATH=./cmd/server/
@@ -10,7 +10,11 @@ CONFIG_FILE=config.yaml
 
 # Remove generated Jet code
 clean:
+ifeq ($(OS),Windows_NT)
+	rd /s /q generated
+else
 	rm -rf ./generated
+endif
 
 # Generate Jet code from MySQL database
 codegen:

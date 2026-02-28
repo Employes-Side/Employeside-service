@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -12,11 +11,6 @@ import (
 	models "github.com/Employes-Side/employee-side"
 	"github.com/Employes-Side/employee-side/internal/endpoints"
 	"github.com/gorilla/mux"
-)
-
-var (
-	errInvalidRequest = errors.New("invalid request")
-	errBadRequest     = errors.New("bad request")
 )
 
 func NewHandler(router *mux.Router, users *endpoints.UserEndpoints) http.Handler {

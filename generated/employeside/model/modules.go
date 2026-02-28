@@ -18,8 +18,11 @@ type Modules struct {
 	ModuleType      string
 	ModuleDesc      *string
 	ModuleShortName *string
-	ModulePrice     *string
+	ModulePrice     *int64
 	Purchased       *bool
+	S3Key           *string
+	S3Url           *string
 	CreatedAt       *time.Time
 	UpdatedAt       *time.Time
+	DeletedAt       *time.Time
 }

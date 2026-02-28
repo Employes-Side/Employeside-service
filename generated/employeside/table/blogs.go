@@ -29,6 +29,7 @@ type blogsTable struct {
 
 	AllColumns     mysql.ColumnList
 	MutableColumns mysql.ColumnList
+	DefaultColumns mysql.ColumnList
 }
 
 type BlogsTable struct {
@@ -77,6 +78,7 @@ func newBlogsTableImpl(schemaName, tableName, alias string) blogsTable {
 		UpdatedAtColumn   = mysql.TimestampColumn("updated_at")
 		allColumns        = mysql.ColumnList{IDColumn, BlogNameColumn, BlogTitleColumn, BlogContentColumn, ModuleIDColumn, WriterIDColumn, WriterNameColumn, CreatedAtColumn, UpdatedAtColumn}
 		mutableColumns    = mysql.ColumnList{BlogNameColumn, BlogTitleColumn, BlogContentColumn, ModuleIDColumn, WriterIDColumn, WriterNameColumn, CreatedAtColumn, UpdatedAtColumn}
+		defaultColumns    = mysql.ColumnList{CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return blogsTable{
@@ -95,5 +97,6 @@ func newBlogsTableImpl(schemaName, tableName, alias string) blogsTable {
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
+		DefaultColumns: defaultColumns,
 	}
 }
